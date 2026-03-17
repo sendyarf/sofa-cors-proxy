@@ -1,7 +1,7 @@
 {
   "name": "sofascore-cors-proxy",
-  "version": "2.0.0",
-  "description": "CORS Proxy for SofaScore API — path forwarding mode",
+  "version": "3.0.0",
+  "description": "CORS Proxy for SofaScore API — Edge Runtime",
   "type": "module",
   "private": true,
   "license": "MIT"
