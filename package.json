@@ -1,8 +1,11 @@
 {
-  "name": "sofascore-cors-proxy",
-  "version": "3.0.0",
-  "description": "CORS Proxy for SofaScore API — Edge Runtime",
-  "type": "module",
-  "private": true,
-  "license": "MIT"
+  "name": "sofa-cors-proxy",
+  "version": "1.0.0",
+  "description": "CORS Proxy for Sofascore API using Vercel Serverless Functions",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
 }
