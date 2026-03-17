@@ -3,7 +3,6 @@ export const config = {
 };
 
 export default async function handler(request) {
-  // Handle preflight OPTIONS request
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 200,
@@ -20,41 +19,31 @@ export default async function handler(request) {
   const targetUrl = `https://api.sofascore.com${url.pathname}${url.search}`;
 
   try {
+    const headers = new Headers();
+    headers.append('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    headers.append('Origin', 'https://www.sofascore.com');
+    headers.append('Referer', 'https://www.sofascore.com/');
+
     const response = await fetch(targetUrl, {
       method: request.method,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Referer': 'https://www.sofascore.com/',
-        'Origin': 'https://www.sofascore.com',
-        'Connection': 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache',
-        // Pass essential client headers like Authorization if they exist
-        ...(request.headers.get('Authorization') && { 'Authorization': request.headers.get('Authorization') })
-      }
+      headers: headers
     });
 
     const data = await response.arrayBuffer();
     
-    const headers = new Headers();
+    const resHeaders = new Headers();
     const contentType = response.headers.get('content-type');
     if (contentType) {
-      headers.set('Content-Type', contentType);
+      resHeaders.set('Content-Type', contentType);
     }
     
-    headers.set('Access-Control-Allow-Credentials', 'true');
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    resHeaders.set('Access-Control-Allow-Credentials', 'true');
+    resHeaders.set('Access-Control-Allow-Origin', '*');
+    resHeaders.set('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
 
     return new Response(data, {
       status: response.status,
-      headers: headers
+      headers: resHeaders
     });
     
   } catch (error) {
