@@ -1,11 +1,10 @@
 export default async function handler(req, res) {
   const allowedOrigin = "*";
 
-  // Handle preflight OPTIONS
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Requested-With");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     return res.status(204).end();
   }
 
@@ -13,18 +12,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Ambil path dari [...path] catch-all
   const pathSegments = req.query.path;
   if (!pathSegments) {
     return res.status(400).json({ error: "Missing path" });
   }
 
-  // Gabungkan path segments + query string (selain 'path')
   const path = Array.isArray(pathSegments)
     ? pathSegments.join("/")
     : pathSegments;
 
-  // Forward query params lainnya (misal ?page=1&limit=20)
   const extraParams = { ...req.query };
   delete extraParams.path;
 
@@ -34,13 +30,10 @@ export default async function handler(req, res) {
   try {
     const response = await fetch(targetUrl, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        Accept: "application/json",
-        "Accept-Language": "en-US,en;q=0.9",
-        Referer: "https://www.sofascore.com/",
-        Origin: "https://www.sofascore.com",
-        "Cache-Control": "no-cache",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Referer": "https://www.sofascore.com/",
+        "Origin": "https://www.sofascore.com",
       },
     });
 
