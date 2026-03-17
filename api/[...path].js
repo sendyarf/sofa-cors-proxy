@@ -1,31 +1,31 @@
-export default async function handler(req, res) {
-  // CORS Headers for preflight and standard requests
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*'); 
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
-  );
+export const config = {
+  runtime: 'edge',
+};
 
+export default async function handler(request) {
   // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,OPTIONS,PATCH,DELETE,POST,PUT',
+        'Access-Control-Allow-Headers': 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization',
+      },
+    });
   }
 
   // Determine the path to proxy to
-  // req.url in Vercel includes the full path like `/api/v1/sport/football`
-  // We remove the `/api` prefix if we want to call Sofascore directly as `https://api.sofascore.com/api/v1/...`
-  // But wait, Sofascore actually uses `/api/v1/...` so if the client requests `/api/v1/...`, 
-  // we can just forward exactly what is in `req.url` minus any local specifics, or just use req.url!
+  // request.url is the full URL (e.g. `https://your-vercel-domain/api/v1/...`)
+  const url = new URL(request.url);
   
-  // Vercel gives req.url as the original requested URL (e.g. `/api/v1/sport/football/events/live?foo=bar`)
-  const targetUrl = `https://api.sofascore.com${req.url}`;
+  // Keep the pathname and search params, but point to api.sofascore.com
+  const targetUrl = `https://api.sofascore.com${url.pathname}${url.search}`;
 
   try {
     const response = await fetch(targetUrl, {
-      method: req.method,
+      method: request.method,
       headers: {
         // Spoof headers to avoid 403 Forbidden
         'Origin': 'https://www.sofascore.com',
@@ -36,22 +36,35 @@ export default async function handler(req, res) {
       }
     });
 
-    // We can pipe the response or read as arrayBuffer/text
+    // Create a new response based on the Sofascore response
     const data = await response.arrayBuffer();
-
-    // Pass through Content-Type from Sofascore
+    
+    const headers = new Headers();
+    // Copy content-type if available
     const contentType = response.headers.get('content-type');
     if (contentType) {
-      res.setHeader('Content-Type', contentType);
+      headers.set('Content-Type', contentType);
     }
-
+    
+    // Set CORS headers for the actual response
+    headers.set('Access-Control-Allow-Credentials', 'true');
+    headers.set('Access-Control-Allow-Origin', '*');
+    
     // Cache responses locally on Vercel Edge for 60 seconds to prevent rate-limiting
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
 
-    // Return the response
-    res.status(response.status).send(Buffer.from(data));
+    return new Response(data, {
+      status: response.status,
+      headers: headers
+    });
+    
   } catch (error) {
-    console.error('Proxy Error:', error);
-    res.status(500).json({ error: 'Failed to proxy request to Sofascore', message: error.message });
+    return new Response(JSON.stringify({ error: 'Failed to proxy request to Sofascore', message: error.message }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 }
