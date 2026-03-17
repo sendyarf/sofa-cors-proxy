@@ -16,23 +16,27 @@ export default async function handler(request) {
     });
   }
 
-  // request.url is the full URL (e.g. `https://your-vercel-domain/api/v1/sport...`)
   const url = new URL(request.url);
-  
-  // Keep the pathname exactly as requested, e.g. /api/v1/sport...
-  // Wait, if the user requested /api/v1/sport..., should we forward /api/v1/... to Sofascore?
-  // Sofascore's api path is indeed /api/v1/... so we forward verbatim
   const targetUrl = `https://api.sofascore.com${url.pathname}${url.search}`;
 
   try {
     const response = await fetch(targetUrl, {
       method: request.method,
       headers: {
-        'Origin': 'https://www.sofascore.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
         'Referer': 'https://www.sofascore.com/',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Origin': 'https://www.sofascore.com',
+        'Connection': 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
+        'Pragma': 'no-cache',
         'Cache-Control': 'no-cache',
-        'Accept': '*/*'
+        // Pass essential client headers like Authorization if they exist
+        ...(request.headers.get('Authorization') && { 'Authorization': request.headers.get('Authorization') })
       }
     });
 
